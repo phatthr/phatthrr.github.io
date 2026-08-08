@@ -1,0 +1,468 @@
+<html>
+
+<canvas id="canvas" width="1000" height="500"
+style="width:1900px; height:920px; border:1px solid #000; image-rendering: pixelated;">
+</canvas>
+
+<div class="sidebar-overlay">
+  <div id="btn-pen" class="tool-btn active">Pen</div>
+  <div id="btn-eraser" class="tool-btn">Eraser</div>
+  <div id="btn-rect" class="tool-btn">Rectangle</div>
+  <div id="btn-ellipse" class="tool-btn">Ellipse</div>
+  <div id="btn-circle" class="tool-btn">Circle</div>
+  <div class="section-title">Colors</div>
+  <div id="palette" class="palette-grid"></div>
+  <div class="section-title">Size</div>
+  <div class="size-control">
+  <button id="btn-dec" class="size-btn" title="Decrease size">-</button>
+  <span id="size-val" class="size-display">3px</span>
+  <button id="btn-inc" class="size-btn" title="Increase size">+</button>
+</div>
+
+
+       <div class="sidebar-overlay-2">
+       <h3 class="overlay-title">Option</h3>
+       
+       
+       </div>
+       </div>
+
+
+       <style>
+        body {
+        position: relative;
+        margin: 8px;
+        }
+       /* ผืนสี่เหลี่ยมอันใหม่ */
+       .sidebar-overlay-2 {
+       position: absolute;
+       top: -40px;
+       left: -0.9px;
+       width: 150px;
+       height: 40px; /* ขยายความสูงเพิ่มนิดนึง เพื่อให้อ่านง่ายขึ้น */
+       background-color: rgba(255, 255, 255, 0.9);
+       border: 1px solid #333;
+       box-sizing: border-box;
+       z-index: 20; 
+       user-select: none;
+
+       /* 3 บรรทัดนี้ช่วยจัดให้อยู่กลางกล่องเป๊ะๆ */
+       display: flex;
+       align-items: center;     /* จัดกลางแนวตั้ง */
+       justify-content: center; /* จัดกลางแนวนอน */
+       }
+
+       .overlay-title {
+       margin: 0; /* เคลียร์ margin ออกเพื่อให้ตรงกลางจริงๆ ไม่เอียง */
+       font-size: 15px;
+       font-family: sans-serif;
+       color: #050505;
+       } 
+
+       
+
+       </style>
+        
+
+<style>
+  /* กำหนดให้ตัวแม่ (หรือ body) เป็นจุดอ้างอิง */
+  body {
+    position: relative;
+    margin: 8px; /* ระยะขอบเดิมของ browser */
+  }
+
+  /* ผืนสี่เหลี่ยมที่วางทับลงไป */
+  .sidebar-overlay {
+    position: absolute;
+    top: 90px;         /* ระยะห่างจากขอบบนของ Canvas */
+    left: 0;             /* ถ้าอยากให้อยู่ฝั่งขวาของ Canvas ให้เปลี่ยนเป็น left: 400px; (หรือ 500px - ความกว้างแถบ) */
+    width: 150px;        /* ปรับความกว้างตามต้องการ */
+    height: 500px;       /* สูงเท่ากับ Canvas เดิม */
+    background-color: rgba(231, 227, 227, 0.85); /* ใส่ความโปร่งแสงนิดหน่อยเพื่อให้มองเห็นพื้นหลัง */
+    border: 1px solid #000;
+    box-sizing: border-box;
+    padding: 10px;
+    z-index: 10;         /* ดันให้อยู่ชั้นบนสุดทับ Canvas */
+    
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+    .tools-container {
+       display: flex;
+       flex-direction: column; /* จัดปุ่มเรียงกันลงมาจากบนลงล่าง */
+       gap: 7px;              /* ระยะห่างระหว่างปุ่มปากกาและยางลบ */
+       }
+
+       .tool-btn {
+    padding: 8px;
+    background-color: #ffffff;
+    border: 1px solid #333;
+    border-radius: 4px;
+    font-size: 13px;
+    font-family: sans-serif;
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s ease;
+  }
+
+  .tool-btn:hover {
+    background-color: #e2e2e2;
+  }
+
+  /* สไตล์เมื่อปุ่มถูกเลือกใช้งาน */
+  .tool-btn.active {
+    background-color: #a5a5a5;
+    color: #ffffff;
+    border-color: #000000;
+    font-weight: bold;
+  }
+
+  .palette-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+  }
+
+  .color-box {
+    width: 20px;
+    height: 20px;
+    border: 1px solid #444;
+    border-radius: 3px;
+    cursor: pointer;
+    box-sizing: border-box;
+    transition: transform 0.1s ease, border-color 0.1s ease;
+  }
+
+  .color-box:hover {
+    transform: scale(1.15);
+  }
+
+  /* สไตล์กล่องสีที่ถูกเลือก */
+  .color-box.active {
+    outline: 2px solid #007bff;
+    outline-offset: 1px;
+    border-color: #fff;
+
+    .size-control {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #fff;
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 3px 6px;
+  }
+
+  .section-title {
+    font-size: 12px;
+    font-family: sans-serif;
+    font-weight: bold;
+    color: #333;
+    margin-top: 6px;
+    margin-bottom: 2px;
+    border-bottom: 1px solid #bbb;
+    padding-bottom: 2px;
+  }
+
+  .size-btn {
+    width: 26px;
+    height: 26px;
+    background-color: #f0f0f0;
+    border: 1px solid #777;
+    border-radius: 3px;
+    font-size: 16px;
+    font-weight: bold;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    transition: background-color 0.1s;
+  }
+
+  .size-btn:hover {
+    background-color: #dcdcdc;
+  }
+
+  .size-btn:active {
+    background-color: #bbb;
+  }
+
+  .size-display {
+    font-family: sans-serif;
+    font-size: 13px;
+    font-weight: bold;
+    color: #222;
+    min-width: 32px;
+    text-align: center;
+  }
+  }
+</style>
+</head>
+<body>
+</style>
+
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const imageData = ctx.createImageData(canvas.width, canvas.height);
+const pixels = imageData.data; // Array of color [R,G,B,A, R,G,B,A, ...]
+
+let savedPixels = new Uint8ClampedArray(pixels.length);
+
+let currentLineWidth = 3;
+const minWidth = 1;
+const maxWidth = 30;
+
+const sizeValDisplay = document.getElementById('size-val');
+const btnInc = document.getElementById('btn-inc');
+const btnDec = document.getElementById('btn-dec');
+
+function updateSizeDisplay() {
+  sizeValDisplay.textContent = `${currentLineWidth}px`;
+}
+
+btnInc.addEventListener('click', () => {
+  if (currentLineWidth < maxWidth) {
+    currentLineWidth++;
+    updateSizeDisplay();
+  }
+});
+
+btnDec.addEventListener('click', () => {
+  if (currentLineWidth > minWidth) {
+    currentLineWidth--;
+    updateSizeDisplay();
+  }
+});
+
+function putPixel(x, y, r, g, b, a = 255, size = currentLineWidth) {
+  if (size <= 1) {
+    if (x >= 0 && x < canvas.width && y >= 0 && y < canvas.height) {
+      const idx = (y * canvas.width + x) * 4;
+      pixels[idx] = r;
+      pixels[idx + 1] = g;
+      pixels[idx + 2] = b;
+      pixels[idx + 3] = a;
+    }
+    return;
+  }
+
+  const radius = Math.floor(size / 2);
+  for (let dy = -radius; dy <= radius; dy++) {
+    for (let dx = -radius; dx <= radius; dx++) {
+      if (dx * dx + dy * dy <= radius * radius) {
+        const px = x + dx;
+        const py = y + dy;
+
+        if (px >= 0 && px < canvas.width && py >= 0 && py < canvas.height) {
+          const idx = (py * canvas.width + px) * 4;
+          pixels[idx] = r;
+          pixels[idx + 1] = g;
+          pixels[idx + 2] = b;
+          pixels[idx + 3] = a;
+        }
+      }
+    }
+  }
+}
+
+function drawLine(x1, y1, x2, y2, r, g, b, a = 255) {
+  const dx = Math.abs(x2 - x1);
+  const dy = Math.abs(y2 - y1);
+
+  if(dx > dy) {
+    const m = (y2 - y1) / (x2 - x1);
+    const c = y1 - m * x1;
+    for (let x = Math.min(x1, x2); x <= Math.max(x1, x2); x++) {
+      const y = Math.round(m * x + c);
+      putPixel(x, y, r, g, b, a);
+    }
+  } else {
+    const m = (x2 - x1) / (y2 - y1);
+    const c = x1 - m * y1;
+    for (let y = Math.min(y1, y2); y <= Math.max(y1, y2); y++) {
+      const x = Math.round(m * y + c);
+      putPixel(x, y, r, g, b, a);
+    }
+  }
+}
+
+function drawRect(x1, y1, x2, y2, r, g, b, a = 255) {
+  drawLine(x1, y1, x2, y1, r, g, b, a); // Top edge
+  drawLine(x2, y1, x2, y2, r, g, b, a); // Right edge
+  drawLine(x2, y2, x1, y2, r, g, b, a); // Bottom edge
+  drawLine(x1, y2, x1, y1, r, g, b, a); // Left edge
+}
+
+function drawEllipse(cx, cy, rx, ry, r, g, b, a = 255) {
+  if (rx <= 0 || ry <= 0) return;
+  
+  // คำนวณจำนวนจุดตามขนาดรัศมี เพื่อให้เส้นประติดกันเป็นเส้นเดียว
+  const step = 1 / Math.max(rx, ry); 
+  
+  for (let theta = 0; theta < Math.PI * 2; theta += step) {
+    const x = Math.round(cx + rx * Math.cos(theta));
+    const y = Math.round(cy + ry * Math.sin(theta));
+    putPixel(x, y, r, g, b, a);
+  }
+}
+
+function toScaledMousePos(posX, posY) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  return {
+    x: Math.floor((posX - rect.left) * scaleX),
+    y: Math.floor((posY - rect.top) * scaleY)
+  };
+}
+
+function restoreSavedPixels() {
+  pixels.set(savedPixels);
+}
+
+function renderShape(currentX, currentY) {
+  if (currentTool === 'rect') {
+    drawRect(startX, startY, currentX, currentY, r, g, b, a);
+  } else if (currentTool === 'ellipse') {
+    const rx = Math.abs(currentX - startX);
+    const ry = Math.abs(currentY - startY);
+    drawEllipse(startX, startY, rx, ry, r, g, b, a);
+  } else if (currentTool === 'circle') {
+    const radius = Math.round(Math.hypot(currentX - startX, currentY - startY));
+    drawEllipse(startX, startY, radius, radius, r, g, b, a);
+  }
+}
+
+let currentTool = 'pen'; // เครื่องมือเริ่มต้นคือ Pen
+
+// พาเลทสีพื้นฐาน 10 สี
+const paletteColors = [
+  { name: 'Black',   r: 0,   g: 0,   b: 0   },
+  { name: 'White',   r: 255, g: 255, b: 255 },
+  { name: 'Red',     r: 255, g: 0,   b: 0   },
+  { name: 'Green',   r: 0,   g: 200, b: 0   },
+  { name: 'Blue',    r: 0,   g: 0,   b: 255 },
+  { name: 'Yellow',  r: 255, g: 220, b: 0   },
+  { name: 'Cyan',    r: 0,   g: 220, b: 255 },
+  { name: 'Magenta', r: 255, g: 0,   b: 220 },
+  { name: 'Orange',  r: 255, g: 140, b: 0   },
+  { name: 'Purple',  r: 128, g: 0,   b: 128 }
+];
+
+// สีเริ่มต้นตั้งค่าเป็น "สีดำ" (Index 0)
+let activeColor = paletteColors[0];
+let r = activeColor.r, g = activeColor.g, b = activeColor.b, a = 255;
+
+// สร้างกล่องสีลงใน DOM
+const paletteContainer = document.getElementById('palette');
+paletteColors.forEach((color, index) => {
+  const box = document.createElement('div');
+  box.className = `color-box ${index === 0 ? 'active' : ''}`;
+  box.style.backgroundColor = `rgb(${color.r}, ${color.g}, ${color.b})`;
+  box.title = color.name;
+
+  box.addEventListener('click', () => {
+    // ปล่อย Active กล่องสีเดิมทั้งหมด
+    document.querySelectorAll('.color-box').forEach(b => b.classList.remove('active'));
+    box.classList.add('active');
+
+    // อัปเดตสี
+    activeColor = color;
+    if (currentTool !== 'eraser') {
+      r = activeColor.r;
+      g = activeColor.g;
+      b = activeColor.b;
+    }
+  });
+
+  paletteContainer.appendChild(box);
+});
+
+// จัดการการเปลี่ยนเครื่องมือ
+const tools = [
+  { id: 'btn-pen', name: 'pen' },
+  { id: 'btn-eraser', name: 'eraser' },
+  { id: 'btn-rect', name: 'rect' },
+  { id: 'btn-ellipse', name: 'ellipse' },
+  { id: 'btn-circle', name: 'circle' }
+];
+
+tools.forEach(tool => {
+  const btn = document.getElementById(tool.id);
+  btn.addEventListener('click', () => {
+    currentTool = tool.name;
+    
+    // ยางลบใช้สีขาวเสมอ
+    if (currentTool === 'eraser') {
+      r = 255; g = 255; b = 255;
+    } else {
+      r = activeColor.r;
+      g = activeColor.g;
+      b = activeColor.b;
+    }
+
+    tools.forEach(t => document.getElementById(t.id).classList.remove('active'));
+    btn.classList.add('active');
+  });
+});
+
+let isDragging = false; 
+let startX = 0, startY = 0;
+let previousX = 0, previousY = 0;
+
+canvas.addEventListener('mousedown', (event) => {
+  isDragging = true;
+  const { x, y } = toScaledMousePos(event.clientX, event.clientY);
+  startX = x;
+  startY = y;
+  previousX = x;
+  previousY = y;
+
+  savedPixels.set(pixels);
+});
+
+canvas.addEventListener('mousemove', (event) => {
+  if (!isDragging) return;
+  
+  const { x, y } = toScaledMousePos(event.clientX, event.clientY);
+
+  if (currentTool === 'pen' || currentTool === 'eraser') {
+    drawLine(previousX, previousY, x, y, r, g, b, a);
+    ctx.putImageData(imageData, 0, 0);
+  } else {
+    restoreSavedPixels();
+    renderShape(x, y);
+    ctx.putImageData(imageData, 0, 0);
+  }
+
+  previousX = x;
+  previousY = y;
+});
+
+canvas.addEventListener('mouseup', (event) => {
+  if (!isDragging) return;
+  const { x, y } = toScaledMousePos(event.clientX, event.clientY);
+
+  // เมื่อปล่อยเมาส์ ให้วาดรูปทรงสุดท้ายฝังลงบน Canvas จริง
+  if (currentTool !== 'pen' && currentTool !== 'eraser') {
+    restoreSavedPixels();
+    renderShape(x, y);
+    ctx.putImageData(imageData, 0, 0);
+  }
+
+  isDragging = false;
+});
+
+
+
+ctx.putImageData(imageData, 0, 0);
+
+</script>
+</body>
+</html>
